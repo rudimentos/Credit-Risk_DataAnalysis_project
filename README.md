@@ -14,6 +14,8 @@ Dashboard:
 
 <img width="1191" height="697" alt="image" src="https://github.com/user-attachments/assets/cd2b40a3-0f22-4f9d-8ec8-dc646d23a553" />
 
+<img width="1176" height="686" alt="image" src="https://github.com/user-attachments/assets/eb42ac78-0e1b-42cf-b0b1-90482bcee171" />
+
 ML model:
 
 <img width="453" height="564" alt="image" src="https://github.com/user-attachments/assets/6d88c5a2-eb18-446c-93b4-354e93f198ea" />
@@ -90,15 +92,16 @@ The target variable was scaled due to major class imbalance.
 
 Next, the optimal hyperparameters were found via Cross Validation (CV)
 
+<img width="674" height="546" alt="image" src="https://github.com/user-attachments/assets/9e57414d-7704-4dcb-a031-7d68c32bd32d" />
+
 Two models were tried, one optimized for f-score, the other optimized for recall
 
-<img width="345" height="262" alt="image" src="https://github.com/user-attachments/assets/0a7f2266-3067-4c57-8d52-94dbc2a323e7" />
 
 <img width="374" height="448" alt="image" src="https://github.com/user-attachments/assets/085b33cb-d160-40d2-a4d1-cab8f0285a26" />
 
 <img width="343" height="437" alt="image" src="https://github.com/user-attachments/assets/6c9a3a57-88cc-45fa-aba7-eee8fc9a30f6" />
 
-The first one had the best balance overall, while the second catched the most defaults. As such, when substituting losses per default, the second model was the clear winner. However not without a cost, as most loans were rejected, including the good ones. So both models were extracted.
+The first one had the best balance overall, while the second caught the most defaults. As such, when substituting values for losses per default, the second model was the clear winner in terms of profitability. However not without a cost, as the model flagged more of good loans as risky. So both models were extracted.
 
 <img width="1286" height="288" alt="image" src="https://github.com/user-attachments/assets/7e58244e-a06b-4f79-95a1-67784faece8a" />
 
