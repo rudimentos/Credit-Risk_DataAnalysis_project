@@ -1,0 +1,238 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "c1b925e5b3e318bc4631",
+  "position": {
+    "x": 1208,
+    "y": 20,
+    "z": 9001,
+    "height": 162,
+    "width": 180,
+    "tabOrder": 9001
+  },
+  "visual": {
+    "visualType": "listSlicer",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "HierarchyLevel": {
+                  "Expression": {
+                    "Hierarchy": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "loan_fact"
+                        }
+                      },
+                      "Hierarchy": "addr Region Hierarchy"
+                    }
+                  },
+                  "Level": "addr Region"
+                }
+              },
+              "queryRef": "loan_fact.addr Region Hierarchy.addr Region",
+              "nativeQueryRef": "addr Region Hierarchy addr Region",
+              "active": true
+            },
+            {
+              "field": {
+                "HierarchyLevel": {
+                  "Expression": {
+                    "Hierarchy": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "loan_fact"
+                        }
+                      },
+                      "Hierarchy": "addr Region Hierarchy"
+                    }
+                  },
+                  "Level": "addr_state Full"
+                }
+              },
+              "queryRef": "loan_fact.addr Region Hierarchy.addr_state Full",
+              "nativeQueryRef": "addr Region Hierarchy addr_state Full",
+              "active": false
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "HierarchyLevel": {
+                "Expression": {
+                  "Hierarchy": {
+                    "Expression": {
+                      "SourceRef": {
+                        "Entity": "loan_fact"
+                      }
+                    },
+                    "Hierarchy": "addr Region Hierarchy"
+                  }
+                },
+                "Level": "addr Region"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "expansionStates": [
+      {
+        "roles": [
+          "Values"
+        ],
+        "levels": [
+          {
+            "queryRefs": [
+              "loan_fact.addr Region Hierarchy.addr Region"
+            ],
+            "isCollapsed": true,
+            "identityKeys": [
+              {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "loan_fact"
+                    }
+                  },
+                  "Property": "addr Region"
+                }
+              }
+            ],
+            "isPinned": true
+          },
+          {
+            "queryRefs": [
+              "loan_fact.addr Region Hierarchy.addr_state Full"
+            ],
+            "isCollapsed": true,
+            "isPinned": true
+          }
+        ],
+        "root": {}
+      }
+    ],
+    "objects": {
+      "general": [
+        {
+          "properties": {}
+        }
+      ],
+      "selection": [
+        {
+          "properties": {
+            "singleSelect": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "subTitle": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Region and State (USA)'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualHeader": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "spacing": [
+        {
+          "properties": {
+            "spaceAbovePlotArea": {
+              "expr": {
+                "Literal": {
+                  "Value": "7D"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "e413ad5c2d97fe859edd",
+        "field": {
+          "HierarchyLevel": {
+            "Expression": {
+              "Hierarchy": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "loan_fact"
+                  }
+                },
+                "Hierarchy": "addr Region Hierarchy"
+              }
+            },
+            "Level": "addr Region"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "423c7b58610ef4ece2d2",
+        "field": {
+          "HierarchyLevel": {
+            "Expression": {
+              "Hierarchy": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "loan_fact"
+                  }
+                },
+                "Hierarchy": "addr Region Hierarchy"
+              }
+            },
+            "Level": "addr_state Full"
+          }
+        },
+        "type": "Categorical"
+      }
+    ]
+  }
+}

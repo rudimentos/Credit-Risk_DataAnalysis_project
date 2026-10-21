@@ -1,0 +1,92 @@
+table 'date table'
+	lineageTag: 070ef55d-0deb-4df3-bd71-609fd102fb06
+
+	measure 'Profit bzzhhhh' =
+			
+			VAR _isMonth = HASONEVALUE('date table'[Month Index])
+			VAR _isYear  = HASONEVALUE('date table'[Year])
+			VAR _y  = MAX('date table'[Year])
+			VAR _mi = MAX('date table'[Month Index])
+			var Profit = sum(loan_fact[Total outcome col])
+			
+			return SWITCH(
+			        TRUE(),
+			        _isMonth, CALCULATE(Profit, REMOVEFILTERS('date table'), 'date table'[Month Index] = _mi - 1),
+			        _isYear,  CALCULATE(Profit, REMOVEFILTERS('date table'), 'date table'[Year] = _y - 1)
+			    )
+		lineageTag: 18ffc59d-dd2a-4417-8b29-658549a51615
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Date
+		formatString: General Date
+		lineageTag: 065a1610-c9d1-46e9-9402-7c0d493ad3be
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Date]
+
+		variation Variation
+			isDefault
+			relationship: 2a4ab261-30c8-47cb-8292-6f5cf673f936
+			defaultHierarchy: LocalDateTable_67464413-9229-4b8b-af28-d5d33b4a66c9.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+	column Year
+		formatString: 0
+		lineageTag: d9dfedce-76b2-4143-90f3-25b83dadec9e
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [Year]
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Month Number'
+		formatString: 0
+		lineageTag: 7945d8d7-641e-4d9b-aa04-fa1f711b0fdc
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [Month Number]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Year-Month
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 79132d0f-b059-44ea-8371-87493d843d39
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Year-Month]
+
+		variation Variation
+			isDefault
+			relationship: 26f39eac-e6b1-42c4-b7f0-bb41e0ce97db
+			defaultHierarchy: LocalDateTable_745463b0-23ae-478a-982a-7bab1c2b8c8f.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'Month Index' = 'date table'[Year] * 12 + 'date table'[Month Number]
+		formatString: 0
+		lineageTag: 3b092023-9387-4017-8504-fd9c2813874d
+		summarizeBy: sum
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'date table' = calculated
+		mode: import
+		source =
+				
+				VAR _min = DATE(YEAR(MIN(loan_fact[issue_d])), 1, 1)
+				VAR _max = DATE(YEAR(MAX(loan_fact[issue_d])), 12, 31)
+				RETURN
+				ADDCOLUMNS(
+				    CALENDAR(_min, _max),
+				    "Year", YEAR([Date]),
+				    "Month Number", MONTH([Date]),
+				    "Year-Month", FORMAT([Date], "YYYY-MM")
+				)
+
+	annotation PBI_Id = 7f5ddf438bff467580a6f103aacd31a4
+

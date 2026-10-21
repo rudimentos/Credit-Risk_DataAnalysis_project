@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "DASHBOARD_LendingClub"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "9c229e84-6056-4aff-b166-89f773ac3cc3"
+  }
+}

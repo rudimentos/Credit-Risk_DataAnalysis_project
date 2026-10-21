@@ -1,0 +1,98 @@
+table 'Driver impact'
+	lineageTag: bd2e2032-c10c-42d1-b736-53889a9368dd
+
+	measure 'Weighted SD' =
+			
+			VAR _p = DIVIDE(SUM('Driver impact'[d]), SUM('Driver impact'[n]))
+			RETURN
+			SQRT(DIVIDE(
+			    SUMX('Driver impact', 'Driver impact'[n] * (DIVIDE('Driver impact'[d], 'Driver impact'[n]) - _p) ^ 2),
+			    SUM('Driver impact'[n])))
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 2ba39adc-a40c-49b7-b41c-f2c9af1c5df0
+
+	measure 'Information Value' =
+			
+			VAR _G = SUMX('Driver impact', 'Driver impact'[n] - 'Driver impact'[d])
+			VAR _B = SUM('Driver impact'[d])
+			RETURN
+			SUMX('Driver impact',
+			    VAR g = ('Driver impact'[n] - 'Driver impact'[d] + 0.5) / _G
+			    VAR b = ('Driver impact'[d] + 0.5) / _B
+			    RETURN (g - b) * LN(g / b))
+		lineageTag: 3a9a4ef9-625b-4e51-aad6-77fcd9e0cf93
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Driver
+		lineageTag: f523af03-7c5a-45df-8b87-a5773d5f1961
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Driver]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Bin
+		lineageTag: 85863849-e37f-43d3-8b81-42089ca2b1d1
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Bin]
+
+		annotation SummarizationSetBy = Automatic
+
+	column n
+		formatString: 0
+		lineageTag: c8b29d43-259a-4709-af0d-8a6c2cc4bb4a
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [n]
+
+		annotation SummarizationSetBy = Automatic
+
+	column d
+		formatString: 0
+		lineageTag: dff30a1c-98d7-4589-a64c-5c49f8cf74de
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [d]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Driver impact' = calculated
+		mode: import
+		source =
+				
+				UNION(
+				    SELECTCOLUMNS(
+				        SUMMARIZECOLUMNS(loan_fact[home_ownership],
+				            "n", COUNTROWS(loan_fact), "d", SUM(loan_fact[is default])),
+				        "Driver", "Home ownership", "Bin", loan_fact[home_ownership] & "", "n", [n], "d", [d]),
+				    SELECTCOLUMNS(
+				        SUMMARIZECOLUMNS(loan_fact[purpose],
+				            "n", COUNTROWS(loan_fact), "d", SUM(loan_fact[is default])),
+				        "Driver", "Purpose", "Bin", loan_fact[purpose] & "", "n", [n], "d", [d]),
+				    SELECTCOLUMNS(
+				    SUMMARIZECOLUMNS(loan_fact[emp_length_num],
+				        "n", COUNTROWS(loan_fact), "d", SUM(loan_fact[is default])),
+				    "Driver", "Employment length", "Bin", loan_fact[emp_length_num] & "", "n", [n], "d", [d]),
+				    SELECTCOLUMNS(
+				    SUMMARIZECOLUMNS(loan_fact[% dti bins],
+				        "n", COUNTROWS(loan_fact), "d", SUM(loan_fact[is default])),
+				    "Driver", "dti %", "Bin", loan_fact[% dti bins] & "", "n", [n], "d", [d]),
+				    SELECTCOLUMNS(
+				    SUMMARIZECOLUMNS(loan_fact[grade],
+				        "n", COUNTROWS(loan_fact), "d", SUM(loan_fact[is default])),
+				    "Driver", "grade", "Bin", loan_fact[grade] & "", "n", [n], "d", [d]),
+				    SELECTCOLUMNS(
+				    SUMMARIZECOLUMNS(loan_fact[addr_state Full],
+				        "n", COUNTROWS(loan_fact), "d", SUM(loan_fact[is default])),
+				    "Driver", "State", "Bin", loan_fact[addr_state Full] & "", "n", [n], "d", [d]),
+				    SELECTCOLUMNS(
+				    SUMMARIZECOLUMNS(loan_fact[term],
+				        "n", COUNTROWS(loan_fact), "d", SUM(loan_fact[is default])),
+				    "Driver", "Loan Length", "Bin", loan_fact[term] & "", "n", [n], "d", [d])
+				    -- add one block per driver: emp_length, % dti (bins), % interest (bins), grade, ...
+				)
+
+	annotation PBI_Id = 65fd3942563b45c0899aaa5d27b88050
+

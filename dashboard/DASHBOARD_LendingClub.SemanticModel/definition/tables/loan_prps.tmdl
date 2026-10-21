@@ -1,0 +1,41 @@
+table loan_prps
+	isHidden
+	lineageTag: a39dd9c8-0813-425c-9e39-3f7f23274b2a
+
+	column purpose
+		dataType: string
+		isHidden
+		lineageTag: dcbf4479-efa4-4f57-8c13-ebe16ce8b16e
+		summarizeBy: none
+		sourceColumn: purpose
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column Index
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 1dbfac48-469d-4b1f-a11c-98a658ca93a8
+		summarizeBy: none
+		sourceColumn: Index
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition loan_prps = m
+		mode: import
+		source =
+				let
+				  Source = Csv.Document(File.Contents("C:\Users\Asus Tuf\Desktop\random stuff\Data Analyst\projects\python_projects\lending_club\lending_club\loan_prps.csv"), [Delimiter = ",", Columns = 1, Encoding = 65001]),
+				  #"Promoted headers" = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				  #"Added index" = Table.AddIndexColumn(#"Promoted headers", "Index", 0, 1, Int64.Type)
+				in
+				  #"Added index"
+
+	changedProperty = IsHidden
+
+	annotation PBI_ResultType = Table
+

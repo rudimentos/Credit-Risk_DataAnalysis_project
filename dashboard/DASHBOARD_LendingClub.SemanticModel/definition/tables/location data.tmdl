@@ -1,0 +1,111 @@
+table 'location data'
+	lineageTag: 7323d49a-58c7-4a94-a9c6-e9125bb8590a
+
+	column State
+		lineageTag: 24f16622-a823-4f81-b2ee-661a0cb73f77
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [State]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Region
+		lineageTag: 1016103c-0f79-4e8e-b547-1f8375ccc88f
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Region]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Count
+		formatString: 0
+		lineageTag: d9c89c65-ef3b-4411-9e6b-357cbe31181a
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [Count]
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Default rate'
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 165299a1-d5ce-47e3-9be9-10c8f7b858de
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [Default rate]
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation __PBI_SemanticLinks = [{"LinkTarget":{"TableName":"location data","TableItemName":"Default rate (bins)","ObjectType":4},"LinkType":"UsedInGroup"}]
+
+	column Profit
+		lineageTag: 2a9b4423-8817-4b4e-97eb-bd8280edb7f1
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [Profit]
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Default rate (bins)' =
+			IF(
+				ISBLANK('location data'[Default rate]),
+				BLANK(),
+				IF(
+					'location data'[Default rate] >= 0,
+					ROUNDDOWN('location data'[Default rate] / 0.02, 0) * 0.02,
+					ROUNDUP('location data'[Default rate] / 0.02, 0) * 0.02
+				)
+			)
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 6a11d2fb-3679-4f7a-81f7-baf7fcd4d14e
+		summarizeBy: none
+
+		extendedProperty GroupingMetadata =
+				{
+				  "version": 0,
+				  "groupedColumns": [
+				    {
+				      "Column": {
+				        "Expression": {
+				          "SourceRef": {
+				            "Entity": "location data"
+				          }
+				        },
+				        "Property": "Default rate"
+				      }
+				    }
+				  ],
+				  "binningMetadata": {
+				    "binSize": {
+				      "value": 0.02,
+				      "unit": 0
+				    }
+				  }
+				}
+
+		annotation GroupingDesignState = {"Version":0,"Sources":[{"Name":"l","Entity":"location data"}],"GroupedColumns":[{"Column":{"Expression":{"SourceRef":{"Source":"l"}},"Property":"Default rate"}}],"BinItem":{"Expression":{"Floor":{"Expression":{"Column":{"Expression":{"SourceRef":{"Source":"l"}},"Property":"Default rate"}},"Size":0.02}}}}
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'location data' = calculated
+		mode: import
+		source =
+				
+				SELECTCOLUMNS(
+				    SUMMARIZECOLUMNS(
+				        loan_fact[addr Region],
+				        loan_fact[addr_state Full],
+				        "n", COUNTROWS(loan_fact),
+				        "p", [Total outcome measure],
+				        "d", [% Default Rate]
+				    ),
+				    "Region", [addr Region],
+				    "State", [addr_state Full],
+				    "Count", [n],
+				    "Default rate", [d],
+				    "Profit", [p]
+				)
+
+	annotation PBI_Id = 83d173ccd03e41e7bddc2b287d3fea87
+

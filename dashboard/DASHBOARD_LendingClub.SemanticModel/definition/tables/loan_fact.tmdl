@@ -1,0 +1,637 @@
+table loan_fact
+	lineageTag: 1972ef92-5778-4dc5-a276-d8c36964d1b3
+
+	measure '% Default Rate' = divide(calculate(countrows(loan_fact), loan_fact[is default] = 1), calculate(countrows(loan_fact), loan_fact[is default] in {0, 1}))
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: a8697298-b84a-49d8-b782-848d22ef4fe9
+
+	measure 'Total Potential Interest Loss' =
+			
+			VAR FP_Yield =
+			    CALCULATE (
+			        DIVIDE ( SUM ( loan_fact[total_rec_int] ), SUM ( loan_fact[loan_amnt] ) ),
+			        REMOVEFILTERS ( loan_fact[is default] ),
+			        loan_fact[loan_status] = "Fully Paid"
+			    )
+			VAR CO_Principal =
+			    CALCULATE ( SUM ( loan_fact[loan_amnt] ), loan_fact[loan_status] = "Charged Off" )
+			RETURN
+			    CO_Principal * FP_Yield
+		formatString: $#,##0.0;-$#,##0.0
+		lineageTag: 1d8e48a6-5012-4151-a736-fcb8e6e26d5e
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	measure 'Total plus' = calculate(sum(loan_fact[total_pymnt]) - sum(loan_fact[loan_amnt]), loan_fact[is default] = 0)
+		formatString: $#,##0.0;-$#,##0.0
+		lineageTag: 569eda4e-7934-4602-b911-5a80dd2c61d5
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	measure 'Total minus' = calculate(sum(loan_fact[total_pymnt]) - sum(loan_fact[loan_amnt]), loan_fact[is default] = 1)
+		formatString: $#,##0.0;-$#,##0.0
+		lineageTag: 71b6e061-8463-47f5-b4bd-a1927fe2f794
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	measure 'Count Fully Paid' =
+			
+			CALCULATE(
+			    COUNTROWS( loan_fact ),
+			    FILTER( loan_fact, loan_fact[is default] = 0)
+			)
+		formatString: 0
+		lineageTag: 76e37e65-ed52-4445-9842-37cc53d4b7a3
+
+	measure 'Total margin' = divide([Total plus]+[Total minus], [Total plus])
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 6b7fc14e-aba0-4e41-a2d4-f24825f59687
+
+	measure 'Profit Yearly' = ```
+			
+			VAR TotalValue = SUM(loan_fact[Total outcome col])
+			VAR NumberOfYears = DISTINCTCOUNT('date table'[Year])
+			RETURN
+			DIVIDE(TotalValue, NumberOfYears)
+			
+			```
+		lineageTag: 68345988-da48-4d84-afd9-d43df74901d8
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Last Month Sales' = ```
+			CALCULATE(sum(loan_fact[Total outcome col]), DATEADD(loan_fact[issue_d], -1, month))
+			
+			```
+		lineageTag: 0568fda0-451b-4037-8092-b2d55257c897
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'total profit %' =
+			
+			DIVIDE (
+			    sum(loan_fact[Total outcome col]),
+			    CALCULATE (
+			        sum(loan_fact[Total outcome col]),
+			        REMOVEFILTERS ( loan_fact[term], loan_fact[addr Region], loan_fact[issue_d] )
+			    )
+			)
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: b298cf1a-555f-4ac4-a7ea-7275b2aec446
+
+	measure 'Profit Change %' =
+			
+			VAR _isMonth = HASONEVALUE('date table'[Month Index])
+			VAR _isYear  = HASONEVALUE('date table'[Year])
+			VAR _y   = MAX('date table'[Year])
+			VAR _mi  = MAX('date table'[Month Index])
+			VAR _cur = SUM(loan_fact[Total outcome col])
+			VAR _prev =
+			    SWITCH(
+			        TRUE(),
+			        _isMonth, CALCULATE(SUM(loan_fact[Total outcome col]), REMOVEFILTERS('date table'), 'date table'[Month Index] = _mi - 1),
+			        _isYear,  CALCULATE(SUM(loan_fact[Total outcome col]), REMOVEFILTERS('date table'), 'date table'[Year] = _y - 1)
+			    )
+			RETURN
+			IF(NOT ISBLANK(_prev), DIVIDE(_cur - _prev, ABS(_prev)))
+		lineageTag: c346d9e4-7a70-49e7-8621-ca069da80843
+
+		formatStringDefinition = "+0.00%;-0.00%;0.00%"
+
+	measure 'total count %' =
+			
+			DIVIDE (
+			    countrows(loan_fact),
+			    CALCULATE (
+			        countrows(loan_fact),
+			        REMOVEFILTERS ( loan_fact[term], loan_fact[addr Region], loan_fact[issue_d] )
+			    )
+			)
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 6add9db1-40d6-4fb1-ae6b-d235a477ec32
+
+	measure 'Avg YoY Profit % Before 2016' =
+			
+			VAR _cut = 2016
+			VAR _t =
+			    ADDCOLUMNS(
+			        FILTER(VALUES('date table'[Year]), 'date table'[Year] < _cut),
+			        "@cur", CALCULATE(SUM(loan_fact[Total outcome col])),
+			        "@prev",
+			            VAR _y = 'date table'[Year]
+			            RETURN
+			                CALCULATE(
+			                    SUM(loan_fact[Total outcome col]),
+			                    REMOVEFILTERS('date table'),
+			                    'date table'[Year] = _y - 1
+			                )
+			    )
+			VAR _valid = FILTER(_t, NOT ISBLANK([@prev]) && [@prev] > 0)
+			RETURN
+			AVERAGEX(_valid, DIVIDE([@cur] - [@prev], [@prev]))
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: ce1f1763-aaae-4180-8015-7103b40c5095
+
+	measure 'Total outcome measure' = sum(loan_fact[total_pymnt]) - sum(loan_fact[loan_amnt])
+		lineageTag: d50f9800-79a1-4aa6-ad55-1e8e7746a481
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Avg YoY Profit % After 2016' =
+			
+			VAR _cut = 2016
+			VAR _t =
+			    ADDCOLUMNS(
+			        FILTER(VALUES('date table'[Year]), 'date table'[Year] >= _cut),
+			        "@cur", CALCULATE(SUM(loan_fact[Total outcome col])),
+			        "@prev",
+			            VAR _y = 'date table'[Year]
+			            RETURN
+			                CALCULATE(
+			                    SUM(loan_fact[total outcome col]),
+			                    REMOVEFILTERS('date table'),
+			                    'date table'[Year] = _y - 1
+			                )
+			    )
+			VAR _valid = FILTER(_t, NOT ISBLANK([@prev]) && [@prev] > 0)
+			RETURN
+			AVERAGEX(_valid, DIVIDE([@cur] - [@prev], [@prev]))
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 7c78d7b4-0b92-42b8-b3e4-960b43adad7c
+
+	measure 'recovery %' = calculate(divide(sum(loan_fact[recoveries]), sum(loan_fact[loan_amnt])), loan_fact[is default] = 1)
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 2aab4cb5-1f5c-41ad-bf52-fbe62db5ee79
+
+	column issue_d
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 05d0b80f-0c54-48c2-83c9-330982cf02e0
+		summarizeBy: none
+		sourceColumn: issue_d
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column term
+		dataType: string
+		lineageTag: 90544d99-61ad-4f85-9b08-01c928cfbae2
+		summarizeBy: none
+		sourceColumn: term
+
+		annotation SummarizationSetBy = Automatic
+
+	column grade
+		dataType: string
+		lineageTag: e5604955-dc41-4801-9fc2-6e0200751902
+		summarizeBy: none
+		sourceColumn: grade
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column sub_grade
+		dataType: string
+		isHidden
+		lineageTag: 283788c3-b702-46c8-ba9c-18c8aa4e2376
+		summarizeBy: none
+		sourceColumn: sub_grade
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column annual_inc
+		dataType: int64
+		formatString: \$#,0;(\$#,0);\$#,0
+		lineageTag: cac9cb72-53f7-4aeb-b3b3-1ac53c77a5c9
+		summarizeBy: sum
+		sourceColumn: annual_inc
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	column dti
+		dataType: double
+		lineageTag: 7e2374b9-5dc0-44d0-801a-4eb07dc75c7f
+		summarizeBy: sum
+		sourceColumn: dti
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column emp_length
+		dataType: string
+		lineageTag: ef2a1f92-2127-4b65-ae73-9e9145a9d54b
+		summarizeBy: none
+		sourceColumn: emp_length
+
+		annotation SummarizationSetBy = Automatic
+
+	column home_ownership
+		dataType: string
+		lineageTag: 63c7da9a-3093-4675-835c-8cd3ac0e4797
+		summarizeBy: none
+		sourceColumn: home_ownership
+
+		annotation SummarizationSetBy = Automatic
+
+	column verification_status
+		dataType: string
+		lineageTag: 14972d9b-059c-4105-bb07-69f6a07b34f9
+		summarizeBy: none
+		sourceColumn: verification_status
+
+		annotation SummarizationSetBy = Automatic
+
+	column addr_state
+		dataType: string
+		isHidden
+		lineageTag: 724c2c97-0f67-490d-b452-8ab9e07611ac
+		summarizeBy: none
+		sourceColumn: addr_state
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column open_acc
+		dataType: int64
+		formatString: 0
+		lineageTag: bc534457-c0b0-4c13-a5a6-fd630954524d
+		summarizeBy: sum
+		sourceColumn: open_acc
+
+		annotation SummarizationSetBy = Automatic
+
+	column revol_util
+		dataType: double
+		lineageTag: c57d4f00-38bf-4594-b964-f148a790538d
+		summarizeBy: sum
+		sourceColumn: revol_util
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column pub_rec_bankruptcies
+		dataType: int64
+		formatString: 0
+		lineageTag: 912b0d0e-2013-47c7-abaf-658629a4cf72
+		summarizeBy: sum
+		sourceColumn: pub_rec_bankruptcies
+
+		annotation SummarizationSetBy = Automatic
+
+	column mort_acc
+		dataType: int64
+		formatString: 0
+		lineageTag: 5a3ea64d-0357-497c-862a-e23771950e58
+		summarizeBy: sum
+		sourceColumn: mort_acc
+
+		annotation SummarizationSetBy = Automatic
+
+	column loan_status
+		dataType: string
+		isHidden
+		lineageTag: 2b8cc769-b688-43ff-b203-6bd21fab6bf1
+		summarizeBy: none
+		sourceColumn: loan_status
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column '% interest'
+		dataType: double
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: a5e1d73c-219a-4934-93fb-efc6bd33d42f
+		summarizeBy: sum
+		sourceColumn: % interest
+
+		annotation SummarizationSetBy = Automatic
+
+	column loan_amnt
+		dataType: int64
+		formatString: 0
+		lineageTag: 46321a2b-3580-473c-a1ce-7f8fae40d829
+		summarizeBy: sum
+		sourceColumn: loan_amnt
+
+		annotation SummarizationSetBy = Automatic
+
+	column total_pymnt
+		dataType: double
+		lineageTag: b1202009-86ab-44c2-addf-cac73e0e8d27
+		summarizeBy: sum
+		sourceColumn: total_pymnt
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column total_rec_int
+		dataType: double
+		lineageTag: 8a06019e-d82d-4212-b44d-e07a0e51be0d
+		summarizeBy: sum
+		sourceColumn: total_rec_int
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column total_rec_prncp
+		dataType: double
+		lineageTag: 5fc0de51-819d-49f4-abea-e584ab8fe019
+		summarizeBy: sum
+		sourceColumn: total_rec_prncp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column recoveries
+		dataType: int64
+		formatString: 0
+		lineageTag: 762eaada-29ef-4793-ad79-e34daeb155fa
+		summarizeBy: sum
+		sourceColumn: recoveries
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'is default' = switch(loan_fact[loan_status], "Default", 1, "Charged Off", 1, "Fully Paid", 0, BLANK())
+		formatString: 0
+		lineageTag: 2190289f-9b17-4592-9287-2a4b915b13a3
+		summarizeBy: sum
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'interest number' = loan_fact[% interest] * 100
+		lineageTag: b3d6febe-7aa6-43f5-b919-afbe455c3330
+		summarizeBy: sum
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+		annotation __PBI_SemanticLinks = [{"LinkTarget":{"TableName":"loan_fact","TableItemName":"% interest number (bins)","ObjectType":4},"LinkType":"UsedInGroup"}]
+
+	column '% interest number (bins)' =
+			IF(
+				ISBLANK('loan_fact'[interest number]),
+				BLANK(),
+				IF(
+					'loan_fact'[interest number] >= 0,
+					ROUNDDOWN('loan_fact'[interest number] / 2.5, 0) * 2.5,
+					ROUNDUP('loan_fact'[interest number] / 2.5, 0) * 2.5
+				)
+			)
+		lineageTag: 137b1fe5-ebf2-428e-a227-e395b621b21b
+		summarizeBy: none
+
+		extendedProperty GroupingMetadata =
+				{
+				  "version": 0,
+				  "groupedColumns": [
+				    {
+				      "Column": {
+				        "Expression": {
+				          "SourceRef": {
+				            "Entity": "loan_fact"
+				          }
+				        },
+				        "Property": "interest number"
+				      }
+				    }
+				  ],
+				  "binningMetadata": {
+				    "binSize": {
+				      "value": 2.5,
+				      "unit": 0
+				    }
+				  }
+				}
+
+		annotation GroupingDesignState = {"Version":0,"Sources":[{"Name":"l","Entity":"loan_fact"}],"GroupedColumns":[{"Column":{"Expression":{"SourceRef":{"Source":"l"}},"Property":"interest number"}}],"BinItem":{"Expression":{"Floor":{"Expression":{"Column":{"Expression":{"SourceRef":{"Source":"l"}},"Property":"interest number"}},"Size":2.5}}}}
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Total outcome col' = loan_fact[total_pymnt] - loan_fact[loan_amnt]
+		formatString: $#,##0.0;-$#,##0.0
+		lineageTag: 88d013b8-47d0-4202-8526-90445ef91c08
+		summarizeBy: sum
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column 'addr_state Full' =
+			
+			SWITCH('loan_fact'[addr_state],
+			"AL","Alabama","AK","Alaska","AZ","Arizona","AR","Arkansas","CA","California",
+			"CO","Colorado","CT","Connecticut","DE","Delaware","DC","Washington DC",
+			"FL","Florida","GA","Georgia","HI","Hawaii","ID","Idaho","IL","Illinois",
+			"IN","Indiana","IA","Iowa","KS","Kansas","KY","Kentucky","LA","Louisiana",
+			"ME","Maine","MD","Maryland","MA","Massachusetts","MI","Michigan","MN","Minnesota",
+			"MS","Mississippi","MO","Missouri","MT","Montana","NE","Nebraska","NV","Nevada",
+			"NH","New Hampshire","NJ","New Jersey","NM","New Mexico","NY","New York",
+			"NC","North Carolina","ND","North Dakota","OH","Ohio","OK","Oklahoma","OR","Oregon",
+			"PA","Pennsylvania","RI","Rhode Island","SC","South Carolina","SD","South Dakota",
+			"TN","Tennessee","TX","Texas","UT","Utah","VT","Vermont","VA","Virginia",
+			"WA","Washington","WV","West Virginia","WI","Wisconsin","WY","Wyoming")
+		isHidden
+		lineageTag: f563c639-79a0-4380-8a08-86eadc129a9d
+		summarizeBy: none
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'issue_d Y-M' = date(year(loan_fact[issue_d]), month(loan_fact[issue_d]), 1)
+		formatString: General Date
+		lineageTag: 04a9197a-595d-4c11-9db7-8f0e09dacfd7
+		summarizeBy: none
+
+		variation Variation
+			isDefault
+			relationship: 7186fa9a-9bab-4776-91b7-f31c8814b8f5
+			defaultHierarchy: LocalDateTable_268fda46-6883-4dd5-a1c1-83f586fac8fb.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+	column '% dti' = divide(loan_fact[dti], 100)
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 80587ef9-8017-42ad-b81d-cf01412fa56a
+		summarizeBy: sum
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation __PBI_SemanticLinks = [{"LinkTarget":{"TableName":"loan_fact","TableItemName":"% dti bins","ObjectType":4},"LinkType":"UsedInGroup"}]
+
+	column 'addr Region' =
+			
+			SWITCH(TRUE(),
+			'loan_fact'[addr_state] IN {"CT","ME","MA","NH","RI","VT","NJ","NY","PA"}, "Northeast",
+			'loan_fact'[addr_state] IN {"IL","IN","MI","OH","WI","IA","KS","MN","MO","NE","ND","SD"}, "Midwest",
+			'loan_fact'[addr_state] IN {"DE","DC","FL","GA","MD","NC","SC","VA","WV","AL","KY","MS","TN","AR","LA","OK","TX"}, "South",
+			'loan_fact'[addr_state] IN {"AZ","CO","ID","MT","NV","NM","UT","WY","AK","CA","HI","OR","WA"}, "West")
+		isHidden
+		lineageTag: a15c4a7f-b43a-4a49-8c73-400a031ec20d
+		summarizeBy: none
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column Index
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: b7317c18-f082-4c15-9327-d2316580680f
+		summarizeBy: none
+		sourceColumn: Index
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column purpose
+		dataType: string
+		lineageTag: 792a454d-78ba-4266-b1e7-cf46e5c18c47
+		summarizeBy: none
+		sourceColumn: purpose
+
+		annotation SummarizationSetBy = Automatic
+
+	column '% dti bins' =
+			IF(
+				ISBLANK('loan_fact'[% dti]),
+				BLANK(),
+				IF(
+					'loan_fact'[% dti] >= 0,
+					ROUNDDOWN('loan_fact'[% dti] / 0.05, 0) * 0.05,
+					ROUNDUP('loan_fact'[% dti] / 0.05, 0) * 0.05
+				)
+			)
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: d6aac8f0-693b-4a25-8fa5-2734b67f861a
+		summarizeBy: none
+
+		extendedProperty GroupingMetadata =
+				{
+				  "version": 0,
+				  "groupedColumns": [
+				    {
+				      "Column": {
+				        "Expression": {
+				          "SourceRef": {
+				            "Entity": "loan_fact"
+				          }
+				        },
+				        "Property": "% dti"
+				      }
+				    }
+				  ],
+				  "binningMetadata": {
+				    "binSize": {
+				      "value": 0.05,
+				      "unit": 0
+				    }
+				  }
+				}
+
+		annotation GroupingDesignState = {"Version":0,"Sources":[{"Name":"l","Entity":"loan_fact"}],"GroupedColumns":[{"Column":{"Expression":{"SourceRef":{"Source":"l"}},"Property":"% dti"}}],"BinItem":{"Expression":{"Floor":{"Expression":{"Column":{"Expression":{"SourceRef":{"Source":"l"}},"Property":"% dti"}},"Size":0.05}}}}
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Purpose Group' =
+			
+			SWITCH(
+			    loan_fact[purpose],
+			    "debt_consolidation", "Debt refinancing",
+			    "credit_card",        "Debt refinancing",
+			    "home_improvement",   "Large investments",
+			    "house",              "Large investments",
+			    "renewable_energy",   "Large investments",
+			    "small_business",     "Large investments",
+			    "car",                "Large investments",
+			    "major_purchase",     "Large investments",
+			    "medical",            "Temporary spendings",
+			    "moving",             "Temporary spendings",
+			    "vacation",           "Temporary spendings",
+			    "Other"
+			)
+		lineageTag: f8c43571-6090-46db-b2bd-0ee3a4ae6d14
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	column emp_length_num = switch(loan_fact[emp_length], "NULL", blank(), loan_fact[emp_length])
+		dataType: int64
+		formatString: 0
+		lineageTag: 96753482-025f-4d68-a6ab-76bde90fb346
+		summarizeBy: sum
+
+		changedProperty = DataType
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_long_term = switch(loan_fact[term], " 3 years", 0, 1)
+		formatString: 0
+		lineageTag: 8ce4f761-ffda-4a20-a0b2-dfd93c20bf56
+		summarizeBy: sum
+
+		annotation SummarizationSetBy = Automatic
+
+	hierarchy 'addr Region Hierarchy'
+		lineageTag: 5ce9384e-b784-49d1-9716-3647562bfd05
+
+		level 'addr Region'
+			lineageTag: 93fac4eb-d4a7-4b64-b765-aec741e113c2
+			column: 'addr Region'
+
+		level 'addr_state Full'
+			lineageTag: 98d3d7b7-58c4-43f6-b2eb-fa12e0036eca
+			column: 'addr_state Full'
+
+	hierarchy 'grade Hierarchy'
+		lineageTag: 1cb29bb4-9578-4ba9-8eed-3e60cd69d377
+
+		level grade
+			lineageTag: d0c5d784-1d71-4661-a10a-95945ff19861
+			column: grade
+
+		level sub_grade
+			lineageTag: 8c98938b-74ab-44b0-bb30-655c05fc3b9d
+			column: sub_grade
+
+	partition loan_fact = m
+		mode: import
+		source =
+				let
+				  Source = Csv.Document(File.Contents("C:\Users\Asus Tuf\Desktop\random stuff\Data Analyst\projects\python_projects\lending_club\lending_club\loan_fact.csv"), [Delimiter = ",", Columns = 21, QuoteStyle = QuoteStyle.None]),
+				  #"Promoted headers" = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				  #"Changed column type" = Table.TransformColumnTypes(#"Promoted headers", {{"issue_d", type date}, {"loan_status", type text}, {"loan_amnt", Int64.Type}, {"term", type text}, {"int_rate", type number}, {"grade", type text}, {"sub_grade", type text}, {"annual_inc", Int64.Type}, {"dti", type number}, {"emp_length", type text}, {"home_ownership", type text}, {"verification_status", type text}, {"addr_state", type text}, {"open_acc", Int64.Type}, {"revol_util", type number}, {"pub_rec_bankruptcies", Int64.Type}, {"mort_acc", Int64.Type}, {"total_pymnt", type number}, {"total_rec_int", type number}, {"total_rec_prncp", type number}, {"recoveries", Int64.Type}}, "en-US"),
+				  #"Replaced value" = Table.ReplaceValue(#"Changed column type", "36 months", "3 years", Replacer.ReplaceText, {"term"}),
+				  #"Replaced value 1" = Table.ReplaceValue(#"Replaced value", "60 months", "5 years", Replacer.ReplaceText, {"term"}),
+				  #"Inserted division" = Table.AddColumn(#"Replaced value 1", "Division", each [int_rate] / 100, type number),
+				  #"Renamed columns" = Table.RenameColumns(#"Inserted division", {{"Division", "interest%"}}),
+				  #"Changed column type 1" = Table.TransformColumnTypes(#"Renamed columns", {{"interest%", Percentage.Type}}),
+				  #"Removed columns" = Table.RemoveColumns(#"Changed column type 1", {"int_rate"}),
+				  #"Reordered columns" = Table.ReorderColumns(#"Removed columns", {"issue_d", "term", "grade", "sub_grade", "annual_inc", "dti", "emp_length", "home_ownership", "verification_status", "addr_state", "open_acc", "revol_util", "pub_rec_bankruptcies", "mort_acc", "loan_status", "interest%", "loan_amnt", "total_pymnt", "total_rec_int", "total_rec_prncp", "recoveries"}),
+				    #"Renamed Columns" = Table.RenameColumns(#"Reordered columns",{{"interest%", "% interest"}}),
+				  #"Added index" = Table.AddIndexColumn(#"Renamed Columns", "Index", 0, 1, Int64.Type),
+				  #"Merged queries" = Table.NestedJoin(#"Added index", {"Index"}, loan_prps, {"Index"}, "loan_prps", JoinKind.LeftOuter),
+				  #"Expanded loan_prps" = Table.ExpandTableColumn(#"Merged queries", "loan_prps", {"purpose"}, {"purpose"})
+				in
+				  #"Expanded loan_prps"
+
+	annotation PBI_ResultType = Table
+

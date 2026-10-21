@@ -1,0 +1,26 @@
+relationship 7186fa9a-9bab-4776-91b7-f31c8814b8f5
+	joinOnDateBehavior: datePartOnly
+	fromColumn: loan_fact.'issue_d Y-M'
+	toColumn: LocalDateTable_268fda46-6883-4dd5-a1c1-83f586fac8fb.Date
+
+relationship AutoDetected_932802b6-26e8-440a-b4a9-d4efaa7f7981
+	crossFilteringBehavior: bothDirections
+	fromCardinality: one
+	fromColumn: loan_fact.Index
+	toColumn: loan_prps.Index
+
+relationship 2a4ab261-30c8-47cb-8292-6f5cf673f936
+	joinOnDateBehavior: datePartOnly
+	fromColumn: 'date table'.Date
+	toColumn: LocalDateTable_67464413-9229-4b8b-af28-d5d33b4a66c9.Date
+
+relationship 80723da3-07c2-4c2e-cd24-d6dc90533530
+	crossFilteringBehavior: bothDirections
+	fromColumn: loan_fact.issue_d
+	toColumn: 'date table'.Date
+
+relationship 26f39eac-e6b1-42c4-b7f0-bb41e0ce97db
+	joinOnDateBehavior: datePartOnly
+	fromColumn: 'date table'.Year-Month
+	toColumn: LocalDateTable_745463b0-23ae-478a-982a-7bab1c2b8c8f.Date
+

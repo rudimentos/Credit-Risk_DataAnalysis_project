@@ -1,0 +1,27 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: ru-RU
+	valueFilterBehavior: independent
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 1
+
+annotation PBI_QueryOrder = ["loan_fact","loan_prps"]
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table loan_fact
+ref table DateTableTemplate_761b6190-4455-425b-ab56-767fb68a2c4b
+ref table LocalDateTable_268fda46-6883-4dd5-a1c1-83f586fac8fb
+ref table loan_prps
+ref table 'date table'
+ref table 'Driver impact'
+ref table 'location data'
+ref table LocalDateTable_67464413-9229-4b8b-af28-d5d33b4a66c9
+ref table LocalDateTable_745463b0-23ae-478a-982a-7bab1c2b8c8f
+
+ref cultureInfo en-US
+
